@@ -1,5 +1,6 @@
 astroid==2.11.7
 asttokens==2.0.7
+autopep8==1.7.0
 azure-core==1.25.0
 azure-storage-blob==12.13.1
 backcall==0.2.0
@@ -53,6 +54,7 @@ platformdirs==2.5.2
 prompt-toolkit==3.0.30
 psutil==5.9.1
 pure-eval==0.2.2
+pycodestyle==2.9.1
 pycparser==2.21
 Pygments==2.12.0
 pylint==2.14.5
@@ -69,6 +71,7 @@ six==1.16.0
 smmap==5.0.0
 stack-data==0.3.0
 stevedore==4.0.0
+toml==0.10.2
 tomli==2.0.1
 tomlkit==0.11.3
 tornado==6.2
