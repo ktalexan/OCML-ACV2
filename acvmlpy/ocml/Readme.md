@@ -2,6 +2,11 @@
 
 ## Python Development Documentation
 
+  ![GitHub Python Version](https://img.shields.io/badge/Python-3.9-Green?logo=python&logoColor=green) ![GitHub](https://img.shields.io/github/license/ktalexan/OCVML-ACV2?logo=gnuprivacyguard&logoColor=white) ![GitHub created with](https://img.shields.io/badge/Visual%20Studio%20Code-9cf?logo=VisualStudioCode&logoColor=blue)
+  </br>
+
+
+
 > ### OCML Class version Information
 
 The current working _OCML_ class version is v.3.0.
