@@ -1,7 +1,5 @@
 # OCML Class Development Notes
 
-<h1 style="background-color: rgb(8,102,0)">OCML Class Development Notes</h1>
-
 ## Python Development Documentation
 
 > ### OCML Class version Information
@@ -14,10 +12,10 @@ The current working _OCML_ class version is v.3.0.
 
 ##### Virtual Python Environment
 
-This version introduced a virtual python environment (venv) associated with the project. While the environment itself is not included in the _Github_ repository distribution, the included [requirements.txt](../../requirements.txt) file was generated using the following command:
+This version introduced a virtual python environment (venv) associated with the project. While the environment itself is not included in the _Github_ repository distribution, the included [requirements.txt](../../requirements.txt) file was generated using the following command: `pip freeze > requirements.txt`
 
 ```python
-   python freeze > requirements.txt
+   pip freeze > requirements.txt
 ```
 
 In some instances, the python library _geojson_ does not work properly. It does not load even when it is installed via conda or pip.
