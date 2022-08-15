@@ -28,7 +28,7 @@ import pyproj
 import requests
 import xlrd
 import xlsxwriter as xlw
-from azure.storage.blob import (BlobClient, BlobServiceClient, ContainerClient,
+from azure.storage.blob import (BlobClient, blob_serviceClient, ContainerClient,
                                 __version__)
 from GPSPhoto import gpsphoto
 from IPython.display import display
@@ -52,28 +52,28 @@ class acvml(object):
     using the Azure Cognitive Services Computer Vision API.
 
     Global Attributes
-        blobAccount: the name of the Azure blob storage account
+        blob_account: the name of the Azure blob storage account
         blobKey: the API key of the Azure blob storage account
-        apiRegion: the azure region of the Azure Cognitive Services Computer Vision API (e.g., 'westus')
+        api_region: the azure region of the Azure Cognitive Services Computer Vision API (e.g., 'westus')
         apiKey: the Azure Cognitive Services Computer Vision API key (from azure)
-        containerName: the base container name of the Azure blob storage account containing the photosphere images
+        container_name: the base container name of the Azure blob storage account containing the photosphere images
 
     Example Class initialization:
-        az = acvml(blobAccount, blobKey, apiRegion, apiKey, containerName)
+        az = acvml(blob_account, blobKey, api_region, apiKey, container_name)
     """
 
     #---------- CLASS INITIAlIZATION FUNCTION ----------#
 
-    def __init__(self, blobAccount, blobKey, apiRegion, apiKey, containerName, metadata):
+    def __init__(self, blob_account, blobKey, api_region, apiKey, container_name, metadata):
         """Function Class Initialization
         Returns an Azure Cognitive Services Computer Vision object (REST API) using a region and key.
 
         Attributes
-            blobAccount: the name of the Azure blob storage account
+            blob_account: the name of the Azure blob storage account
             blobKey: the API key of the Azure blob storage account
-            apiRegion: the azure region of the Azure Cognitive Services Computer Vision API (e.g., 'westus')
+            api_region: the azure region of the Azure Cognitive Services Computer Vision API (e.g., 'westus')
             apiKey: the Azure Cognitive Services Computer Vision API key (from azure)
-            containerName: the base container name of the Azure blob storage account containing the photosphere images
+            container_name: the base container name of the Azure blob storage account containing the photosphere images
 
         Returns
             client: A ComputerVisionAPI object
@@ -83,34 +83,33 @@ class acvml(object):
         """
 
         # Setup account and key for the Azure blob storage, containing the photosphere images
-        #self.blobAccount = blobAccount
+        #self.blob_account = blob_account
         #self.blobKey = blobKey
         # Get the blob service client
         # (see dev notes for info on how to setup connection string in the computer's environmental variables)
-        self.connectionString = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        self.connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 
         # Get the blob service client
-        self.blobService = BlobServiceClient.from_connection_string(connectionString)
-        #self.blobService = BlockBlobService(self.blobAccount, self.blobKey)
+        self.blob_service = BlobServiceClient.from_connection_string(self.connection_string)
 
         # Setup region and key for the Azure vision client API
-        self.apiRegion = apiRegion
-        self.subscriptionKey = apiKey
-        assert self.subscriptionKey
+        self.api_region = api_region
+        self.subscription_key = apiKey
+        assert self.subscription_key
 
         # Setup base URL for Azure Cognitive Services Computer vision
-        self.visionBaseUrl = 'https://{}.api.cognitive.microsoft.com/vision/v2.0/'.format(self.apiRegion)
+        self.vision_base_url = 'https://{}.api.cognitive.microsoft.com/vision/v2.0/'.format(self.api_region)
 
         # Setup the global headers configuration
-        self.headers = {'Ocp-Apim-Subscription-Key': self.subscriptionKey, 'Content-Type': 'application/octet-stream'}
+        self.headers = {'Ocp-Apim-Subscription-Key': self.subscription_key, 'Content-Type': 'application/octet-stream'}
 
         # Setup the Azure blob container name
-        self.containerName = containerName
+        self.container_name = container_name
         self.metadata = metadata
-        self.cardinalName = '{}-cardinal'.format(containerName)
-        self.blobBaseUrl = 'https://{}.blob.core.windows.net'.format(self.blobAccount)
-        self.blobBaseUrl_photospheres = '{}/{}'.format(self.blobBaseUrl, self.containerName)
-        self.blobBaseUrl_cardinal = '{}/{}'.format(self.blobBaseUrl, self.cardinalName)
+        self.cardinal_name = '{}-cardinal'.format(container_name)
+        self.blob_base_url = 'https://{}.blob.core.windows.net'.format(self.blob_account)
+        self.blob_base_url_photospheres = '{}/{}'.format(self.blob_base_url, self.container_name)
+        self.blob_base_url_cardinal = '{}/{}'.format(self.blob_base_url, self.cardinal_name)
 
         # Get Dataset Info
         AnaheimList = ['anaheim2018337p1', 'anaheim2018338p1', 'anaheim2018ee8p2']
@@ -120,12 +119,12 @@ class acvml(object):
         self.datasetID = 0
 
         for i, a in enumerate(AnaheimList, start=1):
-            if a in self.containerName:
+            if a in self.container_name:
                 self.collectionArea = 'Anaheim'
                 self.datasetID = i
 
         for i, a in enumerate(NTustinList, start=4):
-            if a in self.containerName:
+            if a in self.container_name:
                 self.collectionArea = 'North Tustin'
                 self.datasetID = i
         return
@@ -285,7 +284,7 @@ class acvml(object):
 
     #---------- Class Function: CheckBlobContainer ----------#
 
-    def CheckBlobContainer(self, containerName=None, create=True, publicAccess='blob'):
+    def CheckBlobContainer(self, container_name=None, create=True, publicAccess='blob'):
         """Check for the presence of a blob container in the account
         This function checks the Azure storage account whether or not a blob container (folder) exists or not.
         If the container exists, the program makes sure the publicAccess is set to the value of the function.
@@ -293,7 +292,7 @@ class acvml(object):
         If the container does not exist, and create=False (default), nothing is done.
 
         Arguments
-            containerName: the name of the blob container (folder) to be checked (optional, otherwise it checks the main)
+            container_name: the name of the blob container (folder) to be checked (optional, otherwise it checks the main)
             create (=False by default): whether or not to create a new container if it doesn't exist.
             publicAccess (='blob' by default): level of public access to URL ('blob', 'container', etc)
 
@@ -302,20 +301,20 @@ class acvml(object):
         """
 
         # Check if the container is provided:
-        if containerName is None:
-            container = self.containerName  # if empty, revert to the default class container
+        if container_name is None:
+            container = self.container_name  # if empty, revert to the default class container
         else:
-            container = containerName
+            container = container_name
 
         # Check if the container exist:
-        if self.blobService.exists(container):
+        if self.blob_service.exists(container):
             # Making sure it has public blob-only access
-            self.blobService.set_container_acl(container, public_access=publicAccess)
+            self.blob_service.set_container_acl(container, public_access=publicAccess)
             print('Container {} exists. Public access is set to {}'.format(container, publicAccess))
         elif create == True:
             # If the user indicated that create argument is true, then create a new container
-            self.blobService.create_container(container, public_access=publicAccess)
-            assert self.blobService.exists(container)
+            self.blob_service.create_container(container, public_access=publicAccess)
+            assert self.blob_service.exists(container)
             print('Container {} does not exist. A new container is created with public_access set to {}'.format(container, publicAccess))
         else:
             # Just exits otherwise
@@ -339,7 +338,7 @@ class acvml(object):
         # Obtain the list of blobs in the container
         containerList = self.get_blob_list()
         # Check if the blob container exists, and it has the right permissions
-        self.CheckBlobContainer(self.containerName)
+        self.CheckBlobContainer(self.container_name)
         noImg = len(containerList)  # Total number of images in blob container
         j = 0
 
@@ -363,27 +362,27 @@ class acvml(object):
 
     #---------- Class Function: GetBlobList ----------#
 
-    def GetBlobList(self, containerName=None):
+    def GetBlobList(self, container_name=None):
         """List all blobs in Azure storage blob
         This function gets a list of all files in an Azure storage blob (by container folder name)
 
         Arguments
-            containerName (optional): 
-                if containerName is None: Uses the Azure storage blob container name (from class initialization)
-                if containerName is not None: Uses the defined Azure storage blob container
+            container_name (optional): 
+                if container_name is None: Uses the Azure storage blob container name (from class initialization)
+                if container_name is not None: Uses the defined Azure storage blob container
 
         Output
             blobList: the list of all files in the container
         """
 
         # List the blobs in the container (from class initialization)
-        if containerName is None:
-            container = self.containerName
+        if container_name is None:
+            container = self.container_name
         else:
-            container = containerName
+            container = container_name
 
         blobList = []
-        generator = self.blobService.list_blobs(container)
+        generator = self.blob_service.list_blobs(container)
 
         for blob in generator:
             blobList.append(blob)
@@ -496,7 +495,7 @@ class acvml(object):
             # Obtain the blob list of the container
             containerList = self.GetBlobList()
             # Check the container and it's permissions
-            self.CheckBlobContainer(self.containerName)
+            self.CheckBlobContainer(self.container_name)
             noImg = len(containerList)  # number of images in blob list
             print('Number of blobs in container: {}'.format(noImg))
 
@@ -523,7 +522,7 @@ class acvml(object):
 
                     # Create an empty json string to hold the image metadata
                     jsonimg = {}
-                    jsonimg['DatasetName'] = self.containerName
+                    jsonimg['DatasetName'] = self.container_name
                     jsonimg['DatasetID'] = self.datasetID
                     jsonimg['CollectionArea'] = self.collectionArea
                     jsonimg['PhotosphereImageName'] = xlcols['Filename']
@@ -531,7 +530,7 @@ class acvml(object):
                     jsonimg['DateTimeDisplay'] = imgdt.strftime('%m/%d/%Y %H:%M:%S.%f').rstrip('0')
                     jsonimg['DateTimeString'] = imgdt.strftime('%Y%m%d%H%M%S.%f').rstrip('0')
                     jsonimg['PhotosphereResolution'] = '8000 x 4000'
-                    jsonimg['PhotosphereURL'] = '{}/{}'.format(self.blobBaseUrl_photospheres, xlcols['Filename'])
+                    jsonimg['PhotosphereURL'] = '{}/{}'.format(self.blob_base_url_photospheres, xlcols['Filename'])
                     jsonimg['GooglePhotosphere'] = 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={},{}&heading={}'.format(str(lat), str(lon), str(dirmov))
                     jsonimg['Longitude'] = lon
                     jsonimg['Latitude'] = lat
@@ -559,7 +558,7 @@ class acvml(object):
                         metastring[key] = str(jsonimg[key])
 
                     # Set the metadata dictionary as the Azure blob image's metadata
-                    self.blobService.set_blob_metadata(self.containerName, imgName, metastring)
+                    self.blob_service.set_blob_metadata(self.container_name, imgName, metastring)
 
             return
 
@@ -591,8 +590,8 @@ class acvml(object):
             # Getting the photosphere image metadata
             metaString = {}
 
-            if self.blobService.get_blob_metadata(self.containerName, imageName) is not {}:
-                metaString = self.blobService.get_blob_metadata(self.containerName, imageName)
+            if self.blob_service.get_blob_metadata(self.container_name, imageName) is not {}:
+                metaString = self.blob_service.get_blob_metadata(self.container_name, imageName)
                 fields = ['Direction', 'Longitude', 'Latitude', 'Altitude', 'Easting',
                           'Northing', 'Height', 'DirectionEasting', 'DirectionNorthing',
                           'DirectionHeight', 'UpEasting', 'UpNorthing', 'UpHeight', 'Roll',
@@ -602,7 +601,7 @@ class acvml(object):
                     metaString[field] = float(metaString[field])
 
                 # Getting the photosphere image from azure blob storage and convert it to bytes
-                content = self.blobService.get_blob_to_bytes(self.containerName, imageName).content
+                content = self.blob_service.get_blob_to_bytes(self.container_name, imageName).content
                 img = Image.open(io.BytesIO(content))
 
                 # Creating the areas of the cardinal images
@@ -625,14 +624,14 @@ class acvml(object):
                     cardinalLabel = self.CheckCardinality(cardinalDir)
                     cardinalImgName = '{}_{}_{}.jpg'.format(imageName.split('.jpg')[0], ncard + 1, cardinalLabel)
                     cmeta['CardinalImageName'] = cardinalImgName
-                    cmeta['CardinalImageURL'] = '{}/{}'.format(self.blobBaseUrl_cardinal, cardinalImgName)
+                    cmeta['CardinalImageURL'] = '{}/{}'.format(self.blob_base_url_cardinal, cardinalImgName)
                     cmeta['GoogleCardinal'] = 'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={},{}&heading={}'.format(str(cmeta['Latitude']), str(cmeta['Longitude']), str(cardinalDir))
                     cmeta['CardinalNumber'] = ncard + 1
                     cmeta['CardinalDirection'] = cardinalDir
                     cmeta['CardinalDirectionLabel'] = cardinalLabel
 
                     # Set up the Computer Vision analysis parameter
-                    url = self.visionBaseUrl + 'analyze'
+                    url = self.vision_base_url + 'analyze'
                     headers = self.headers
                     params = {"visualFeatures": "Categories,Tags,Description,ImageType,Color,Objects"}
                     response = requests.post(url, headers=headers, params=params, data=cardinalArray)
@@ -738,8 +737,8 @@ class acvml(object):
                     for key in cmeta.keys():
                         cardinalMetaBlob[key] = str(cmeta[key])
 
-                    self.blobService.create_blob_from_bytes(
-                        container_name=self.cardinalName,
+                    self.blob_service.create_blob_from_bytes(
+                        container_name=self.cardinal_name,
                         blob_name=cardinalImgName,
                         blob=taggedArray,
                         metadata=cardinalMetaBlob
@@ -768,13 +767,13 @@ class acvml(object):
         try:
 
             featList = []
-            self.CheckBlobContainer(self.cardinalName)
-            blobList = self.GetBlobList(self.cardinalName)
+            self.CheckBlobContainer(self.cardinal_name)
+            blobList = self.GetBlobList(self.cardinal_name)
 
             # Loop through the blob list and populate the dictionary json string
             for blob in tqdm(blobList, desc='Processing Cardinals:', unit=' blobs'):
-                if self.blobService.get_blob_metadata(self.cardinalName, blob.name) is not {}:
-                    metaString = self.blobService.get_blob_metadata(self.cardinalName, blob.name)
+                if self.blob_service.get_blob_metadata(self.cardinal_name, blob.name) is not {}:
+                    metaString = self.blob_service.get_blob_metadata(self.cardinal_name, blob.name)
                     # All original fields in the Azure blob metadata are stored as strings. Some manipulations are required.
 
                     # Fields that need to be converted to float numbers
