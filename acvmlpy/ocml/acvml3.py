@@ -28,6 +28,7 @@ import pyproj
 import requests
 import xlrd
 import xlsxwriter as xlw
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import (BlobClient, BlobServiceClient, ContainerClient, __version__)
 from GPSPhoto import gpsphoto
 from IPython.display import display
