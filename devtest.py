@@ -26,3 +26,9 @@ from pandas.io.json import json_normalize
 from PIL import Image, ImageDraw, ImageFont
 from pytz import timezone
 from tqdm import tqdm
+
+
+connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+
+blob_service = BlobServiceClient.from_connection_string(connection_string)
+

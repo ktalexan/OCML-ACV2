@@ -28,8 +28,7 @@ import pyproj
 import requests
 import xlrd
 import xlsxwriter as xlw
-from azure.storage.blob import (BlobClient, blob_serviceClient, ContainerClient,
-                                __version__)
+from azure.storage.blob import (BlobClient, blob_serviceClient, ContainerClient,__version__)
 from GPSPhoto import gpsphoto
 from IPython.display import display
 from pandas.io.json import json_normalize
